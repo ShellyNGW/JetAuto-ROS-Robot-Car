@@ -6,4 +6,4 @@ planning, tracking and obstacle avoidance, autonomous driving, human feature rec
 somatosensory interaction and voice interaction all can be achieved! Additionally, combing with AI 
 vision robotic arm, it is able to navigate to transport, recognize to sort objects, ect.
 
-![JetAuto and JetAuto Pro]([/assets/img/philly-magic-garden.jpg](https://github.com/CharlotteNGAI/JetAuto-Tutorials/blob/main/JetAuto.png) "Magic Gardens")
+![image](https://github.com/CharlotteNGAI/JetAuto-Tutorials/blob/main/JetAuto.png)
