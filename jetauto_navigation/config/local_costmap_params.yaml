@@ -1,0 +1,21 @@
+# 局部代价图(local cost map)
+local_costmap:
+  global_frame: odom                 # 用于操作成本图的全局框架。(global framework used on cost map)
+  robot_base_frame: base_footprint   # 机器人基本连杆的框架名称。(framework name of robot's basic links)
+  update_frequency: 10.0             # 要更新的地图的频率（Hz）。(update frequency of the map, unit: Hz)
+  publish_frequency: 10.0            # 地图发布显示信息的频率（Hz）。静态全局地图不需要发布(frequency of the map to publish display information. static global map doesn't need to publish)
+  rolling_window: true               # 更新全局地图，与上一个参数相反。如果static_map参数设置为true，则该参数必须设置为false(update global map. Opposite to the last parameter. If static_map parameter is set as true, this value must be set as false)
+  width: 3.0                         # 地图的宽度（以米为单位）(width of the map(meter))
+  height: 3.0                        # 地图的高度（以米为单位）。(height of the map(meter))
+  resolution: 0.025                  # 地图的分辨率，以米/单元为单位。(resolution of the map(meter))
+  transform_tolerance: 1            # 指定可容忍的转换 (tf) 数据延迟（以秒为单位）(set latency tolerance of data conversion, unit: second)
+  plugins:
+    - {name: obstacle_layer,  type: "costmap_2d::ObstacleLayer"}
+    - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
+    - {name: virtual_wall,    type: "virtual_wall::VirtualWall"}
+  inflation_layer:
+    enabled: true
+    inflation_radius: 1 # 不能大于robot_radius, 全局规划时base_footprint与障碍物保持的最小距离, 小于此值则规划失败(not greater than robot_radius. Minimum distance between base_footprint and obstacle during global planning. When it is smaller than this value, planning will end in failure)
+    cost_scaling_factor: 1.0 # 代价比例系数，越大则代价值越小, cost_scaling_factor越大占用的计算量越小(cost ratio factor. The greater the value, the less the cost)
+  virtual_wall:
+    map_frame: "map"

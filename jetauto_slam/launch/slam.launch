@@ -1,0 +1,184 @@
+<?xml version="1.0"?>
+<launch>
+    <!--建图方法选择(mapping method choice)-->
+    <arg name="slam_methods" default="gmapping" doc="slam type 
+        [gmapping, cartographer, hector, karto, frontier, explore, rrt_exploration, rtabmap]"/>
+
+    <arg name="gmapping"        default="gmapping"/>
+    <arg name="cartographer"    default="cartographer"/>
+    <arg name="hector"          default="hector"/>
+    <arg name="karto"           default="karto"/>
+    <arg name="frontier"        default="frontier"/>
+    <arg name="explore"         default="explore"/>
+    <arg name="rrt_exploration" default="rrt_exploration"/>
+    <arg name="rtabmap"         default="rtabmap"/>
+
+    <arg name="master_name"  default="$(env MASTER)"/>
+
+    <!--机器命名空间(robot name space)-->
+    <arg     if="$(eval slam_methods == 'rrt_exploration')" name="robot_prefix" default="jetauto_"/>
+    <arg     if="$(eval slam_methods == 'rrt_exploration')" name="robot_number" default="1"/>
+    <arg     if="$(eval slam_methods == 'rrt_exploration')" name="robot_name"   default="$(arg robot_prefix)$(arg robot_number)"/>
+    <arg unless="$(eval slam_methods == 'rrt_exploration')" name="robot_name"   default="$(env HOST)"/>
+
+    <!--是否使用仿真(whether to use simulation)-->
+    <arg name="sim"                 default="false"/>
+
+    <!--是否使用深度相机模拟雷达(whether to use depth camera to simulate Lidar)-->
+    <arg name="use_depth_camera"    default="false"/>
+
+    <!--topic和frame设置(topic and frame setting)-->
+    <arg     if="$(eval robot_name == '/')" name="topic_prefix" default=""/>
+    <arg unless="$(eval robot_name == '/')" name="topic_prefix" default="/$(arg robot_name)"/>
+    <arg     if="$(eval robot_name == '/')" name="frame_prefix" default=""/>
+    <arg unless="$(eval robot_name == '/')" name="frame_prefix" default="$(arg robot_name)/"/>
+
+    <arg name="cmd_vel_topic"           default="$(arg topic_prefix)/jetauto_controller/cmd_vel"/>
+    <arg name="depth_camera_name"       default="camera"/>
+    <arg name="scan_topic"              default="$(arg topic_prefix)/scan"/>
+    <arg name="map_topic"               default="$(arg topic_prefix)/map"/>
+    <arg name="odom_topic"              default="$(arg topic_prefix)/odom"/>
+    <arg name="clicked_point"           default="$(arg topic_prefix)/clicked_point"/>
+    <arg name="move_base_result"        default="$(arg topic_prefix)/move_base/result"/>
+    <arg name="costmap_topic"           default="$(arg topic_prefix)/move_base/global_costmap/costmap"/>
+    <arg name="costmap_updates_topic"   default="$(arg topic_prefix)/move_base/global_costmap/costmap_updates"/>
+
+    <arg name="map_frame"           default="$(arg frame_prefix)map"/>
+    <arg name="odom_frame"          default="$(arg frame_prefix)odom"/>
+    <arg name="base_frame"          default="$(arg frame_prefix)base_footprint"/>
+
+    <arg name="rtabmap_map_path"    default="~/.ros/rtabmap.db"/>
+
+    <group ns="$(arg robot_name)">
+        <!--建图方法选择(mapping method choice)-->
+        <group if="$(eval slam_methods == 'gmapping')">
+            <include file="$(find jetauto_slam)/launch/$(arg slam_methods).launch">
+                <arg name="scan"        value="$(arg scan_topic)"/>
+                <arg name="base_frame"  value="$(arg base_frame)"/>
+                <arg name="odom_frame"  value="$(arg odom_frame)"/>
+                <arg name="map_frame"   value="$(arg map_frame)"/>
+            </include>
+        </group>
+        <group if="$(eval slam_methods == 'cartographer')">
+            <include file="$(find jetauto_slam)/launch/$(arg slam_methods).launch">
+                <arg name="sim"        value="$(arg sim)"/>
+                <arg name="prefix"     value="$(arg robot_name)"/>
+            </include>
+        </group>
+        <group if="$(eval slam_methods == 'hector')">
+            <include file="$(find jetauto_slam)/launch/$(arg slam_methods).launch">
+                <arg name="scan_topic"  value="$(arg scan_topic)"/>
+                <arg name="map_frame"   value="$(arg map_frame)"/>
+                <arg name="base_frame"  value="$(arg base_frame)"/>
+                <arg name="odom_frame"  value="$(arg odom_frame)"/>
+            </include>
+        </group>
+        <group if="$(eval slam_methods == 'karto')">
+            <include file="$(find jetauto_slam)/launch/$(arg slam_methods).launch">
+                <arg name="map_frame"   value="$(arg map_frame)"/>
+                <arg name="base_frame"  value="$(arg base_frame)"/>
+                <arg name="odom_frame"  value="$(arg odom_frame)"/>
+            </include>
+        </group>
+        <group if="$(eval slam_methods == 'frontier')">
+            <include file="$(find jetauto_slam)/launch/gmapping.launch">
+                <arg name="scan"        value="$(arg scan_topic)"/>
+                <arg name="base_frame"  value="$(arg base_frame)"/>
+                <arg name="odom_frame"  value="$(arg odom_frame)"/>
+                <arg name="map_frame"   value="$(arg map_frame)"/>
+            </include>
+            <include file="$(find jetauto_slam)/launch/$(arg slam_methods).launch">
+                <arg name="global_frame"        value="$(arg map_frame)"/>
+                <arg name="robot_base_frame"    value="$(arg base_frame)"/>
+                <arg name="odom_frame"          value="$(arg odom_frame)"/>
+                <arg name="map_topic"           value="$(arg map_topic)"/>
+                <arg name="map_frame"           value="$(arg map_frame)"/>
+                <arg name="odom_topic"          value="$(arg odom_topic)"/>
+                <arg name="scan_topic"          value="$(arg scan_topic)"/>
+                <arg name="clicked_point"       value="$(arg clicked_point)"/>
+                <arg name="move_base_result"    value="$(arg move_base_result)"/>
+                <arg name="cmd_vel_topic"       value="$(arg cmd_vel_topic)"/>
+            </include>
+        </group>
+        <group if="$(eval slam_methods == 'explore')">
+            <include file="$(find jetauto_slam)/launch/gmapping.launch">
+                <arg name="scan"        value="$(arg scan_topic)"/>
+                <arg name="base_frame"  value="$(arg base_frame)"/>
+                <arg name="odom_frame"  value="$(arg odom_frame)"/>
+                <arg name="map_frame"   value="$(arg map_frame)"/>
+            </include>
+            <include file="$(find jetauto_slam)/launch/$(arg slam_methods).launch">
+                <arg name="map_topic"               value="$(arg map_topic)"/>
+                <arg name="base_frame"              value="$(arg base_frame)"/>
+                <arg name="costmap_topic"           value="$(arg costmap_topic)"/>
+                <arg name="costmap_updates_topic"   value="$(arg costmap_updates_topic)"/>
+            </include>
+            <!-- 启动路径规划算法包(start path planning algorithm) -->
+            <include file="$(find jetauto_navigation)/launch/include/move_base.launch">
+                <arg name="cmd_vel_topic"                   value="$(arg cmd_vel_topic)"/>
+                <arg name="global_costmap_map_topic"        value="$(arg map_topic)"/>
+                <arg name="global_costmap_sensor_frame"     value="$(arg base_frame)"/>
+                <arg name="global_costmap_sensor_topic"     value="$(arg scan_topic)"/>
+                <arg name="global_costmap_global_frame"     value="$(arg map_frame)"/>
+                <arg name="global_costmap_robot_base_frame" value="$(arg base_frame)"/>
+                <arg name="local_costmap_map_topic"         value="$(arg map_topic)"/>
+                <arg name="local_costmap_sensor_frame"      value="$(arg base_frame)"/>
+                <arg name="local_costmap_sensor_topic"      value="$(arg scan_topic)"/>
+                <arg name="local_costmap_global_frame"      value="$(arg odom_frame)"/>
+                <arg name="local_costmap_robot_base_frame"  value="$(arg base_frame)"/>
+                <arg name="virtual_wall_map_frame"          value="$(arg map_frame)"/>
+                <arg name="teb_odom_topic"                  value="$(arg odom_topic)"/>
+                <arg name="teb_map_frame"                   value="$(arg odom_frame)"/>
+            </include>
+        </group>
+        <group if="$(eval slam_methods == 'rrt_exploration')">
+            <include file="$(find jetauto_slam)/launch/gmapping.launch">
+                <arg name="scan"        value="$(arg scan_topic)"/>
+                <arg name="base_frame"  value="$(arg base_frame)"/>
+                <arg name="odom_frame"  value="$(arg odom_frame)"/>
+                <arg name="map_frame"   value="$(arg map_frame)"/>
+            </include>
+            <!-- 启动路径规划算法包(start path planning algorithm) -->
+            <include file="$(find jetauto_navigation)/launch/include/move_base.launch">
+                <arg name="cmd_vel_topic"                   value="$(arg cmd_vel_topic)"/>
+                <arg name="global_costmap_map_topic"        value="$(arg map_topic)"/>
+                <arg name="global_costmap_sensor_frame"     value="$(arg base_frame)"/>
+                <arg name="global_costmap_sensor_topic"     value="$(arg scan_topic)"/>
+                <arg name="global_costmap_global_frame"     value="$(arg map_frame)"/>
+                <arg name="global_costmap_robot_base_frame" value="$(arg base_frame)"/>
+                <arg name="local_costmap_map_topic"         value="$(arg map_topic)"/>
+                <arg name="local_costmap_sensor_frame"      value="$(arg base_frame)"/>
+                <arg name="local_costmap_sensor_topic"      value="$(arg scan_topic)"/>
+                <arg name="local_costmap_global_frame"      value="$(arg odom_frame)"/>
+                <arg name="local_costmap_robot_base_frame"  value="$(arg base_frame)"/>
+                <arg name="virtual_wall_map_frame"          value="$(arg map_frame)"/>
+                <arg name="teb_odom_topic"                  value="$(arg odom_topic)"/>
+                <arg name="teb_map_frame"                   value="$(arg odom_frame)"/>
+            </include>
+            <!-- 启动自探索建图算法包(start autonomous exploring mapping algorithm) -->
+            <include file="$(find jetauto_slam)/launch/rrt_exploration.launch">
+                <arg name="namespace"       value="$(arg robot_prefix)"/>
+                <arg name="n_robots"        value="$(arg robot_number)"/>
+                <arg name="map_topic"       value="$(arg map_topic)"/>
+                <arg name="odom_topic"      value="$(arg odom_topic)"/>
+                <arg name="robot_base"      value="$(arg base_frame)"/>
+                <arg name="global_frame"    value="$(arg map_frame)"/>
+            </include>
+        </group>
+        <group if="$(eval slam_methods == 'rtabmap')">
+            <include file="$(find jetauto_slam)/launch/rtabmap.launch" >
+                <arg name="database_path"       value="$(arg rtabmap_map_path)"/>
+                <arg name="subscribe_scan"      value="true"/>
+                <arg name="rgb_topic"           value="$(arg topic_prefix)/$(arg depth_camera_name)/rgb/image_raw" />
+                <arg name="depth_topic"         value="$(arg topic_prefix)/$(arg depth_camera_name)/depth/image_raw" />
+                <arg name="camera_info_topic"   value="$(arg topic_prefix)/$(arg depth_camera_name)/rgb/camera_info" />
+                <arg name="scan_topic"          value="$(arg scan_topic)"/>
+                <arg name="map_topic"           value="$(arg map_topic)"/>
+                <arg name="map_frame"            value="$(arg map_frame)"/>
+                <arg name="odom_frame"          value="$(arg odom_frame)"/>
+                <arg name="base_frame"          value="$(arg base_frame)"/>
+                <arg name="move_base"           value="$(arg topic_prefix)/move_base"/>
+            </include>
+        </group>
+    </group>
+</launch>

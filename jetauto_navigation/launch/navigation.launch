@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="master_name" default="$(env MASTER)"/>
+    <arg name="robot_name"  default="$(env HOST)" />
+    <arg name="drive_type"  default="diff"/>
+
+    <!--topic和frame设置-->
+    <arg      if="$(eval robot_name == '/')"    name="topic_prefix" default=""/>
+    <arg unless="$(eval robot_name == '/')"     name="topic_prefix" default="/$(arg robot_name)"/>
+    <arg      if="$(eval robot_name == '/')"    name="frame_prefix" default=""/>
+    <arg unless="$(eval robot_name == '/')"     name="frame_prefix" default="$(arg robot_name)/"/>
+    <arg      if="$(eval robot_name == '/')"    name="tf_prefix"    default=""/>
+    <arg unless="$(eval robot_name == '/')"     name="tf_prefix"    default="$(arg robot_name)"/>
+
+    <arg name="cmd_vel_topic"       default="$(arg topic_prefix)/jetauto_controller/cmd_vel"/>
+    <arg name="scan_topic"          default="$(arg topic_prefix)/scan"/>
+    <arg     if="$(eval robot_name == master_name)" name="map_topic" default="$(arg topic_prefix)/map"/>
+    <arg unless="$(eval robot_name == master_name)" name="map_topic" default="/$(arg master_name)/map"/>
+    <arg name="odom_topic"          default="$(arg topic_prefix)/odom"/>
+
+    <arg     if="$(eval robot_name == master_name)" name="map_frame" default="$(arg frame_prefix)map"/>
+    <arg unless="$(eval robot_name == master_name)" name="map_frame" default="$(arg master_name)/map"/>
+    <arg name="odom_frame"          default="$(arg frame_prefix)odom"/>
+    <arg name="base_frame"          default="$(arg frame_prefix)base_footprint"/>
+    <arg name="use_teb"             default="true"/>
+    <arg name="clicked_point"       default="$(arg topic_prefix)/clicked_point"/>
+    <arg name="move_base_result"    default="$(arg topic_prefix)/move_base/result"/>
+
+    <group ns="$(arg robot_name)">
+        <!-- 启动AMCL自适应蒙特卡洛定位算法包 -->
+        <include file="$(find jetauto_navigation)/launch/include/amcl.launch">
+            <arg name="drive_type"      value="$(arg drive_type)"/>
+            <arg name="scan_topic"      value="$(arg scan_topic)"/>
+            <arg name="use_map_topic"   value="true"/>
+            <arg name="map_topic"       value="$(arg map_topic)"/>
+            <arg name="map_frame_id"    value="$(arg map_frame)"/>
+            <arg name="odom_frame_id"   value="$(arg odom_frame)"/>
+            <arg name="base_frame_id"   value="$(arg base_frame)"/>
+        </include>
+
+        <!-- 启动路径规划算法包 -->
+        <include file="$(find jetauto_navigation)/launch/include/move_base.launch">
+            <arg name="drive_type"                      value="$(arg drive_type)"/>
+            <arg name="use_teb"                         value="$(arg use_teb)"/>
+            <arg name="cmd_vel_topic"                   value="$(arg cmd_vel_topic)" />
+
+            <arg name="global_costmap_map_topic"        value="$(arg map_topic)"/>
+            <arg name="global_costmap_sensor_frame"     value="$(arg base_frame)"/>
+            <arg name="global_costmap_sensor_topic"     value="$(arg scan_topic)"/>
+            <arg name="global_costmap_global_frame"     value="$(arg map_frame)"/>
+            <arg name="global_costmap_robot_base_frame" value="$(arg base_frame)"/>
+            <arg name="local_costmap_map_topic"         value="$(arg map_topic)"/>
+            <arg name="local_costmap_sensor_frame"      value="$(arg base_frame)"/>
+            <arg name="local_costmap_sensor_topic"      value="$(arg scan_topic)"/>
+            <arg name="local_costmap_global_frame"      value="$(arg odom_frame)"/>
+            <arg name="local_costmap_robot_base_frame"  value="$(arg base_frame)"/>
+            <arg name="virtual_wall_map_frame"          value="$(arg map_frame)"/>
+            <arg name="dwa_global_frame"                value="$(arg map_frame)"/>
+            <arg name="teb_odom_topic"                  value="$(arg odom_topic)"/>
+            <arg name="teb_map_frame"                   value="$(arg odom_frame)"/>
+        </include>
+    </group>
+</launch>

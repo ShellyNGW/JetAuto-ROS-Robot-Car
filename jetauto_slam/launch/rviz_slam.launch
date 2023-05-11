@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<launch>
+    <!--是否使用仿真(whether to use simulation)-->
+    <arg name="sim"          default="false"/>
+
+    <!--建图方法选择(mapping method choice)-->
+    <arg name="slam_methods" default="gmapping" doc="slam type
+    [gmapping, cartographer, hector, karto, frontier, explore, rrt_exploration, rtabmap]"/>
+
+    <arg name="gmapping"        default="gmapping"/>
+    <arg name="cartographer"    default="cartographer"/>
+    <arg name="hector"          default="hector"/>
+    <arg name="karto"           default="karto"/>
+    <arg name="frontier"        default="frontier"/>
+    <arg name="explore"         default="explore"/>
+    <arg name="rrt_exploration" default="rrt_exploration"/>
+    <arg name="rtabmap"         default="rtabmap"/>
+
+    <node     if="$(arg sim)" pkg="rviz" type="rviz" name="rviz" required="true" args="-d $(find jetauto_slam)/rviz/$(arg slam_methods)_sim.rviz"/>
+    <node unless="$(arg sim)" pkg="rviz" type="rviz" name="rviz" required="true" args="-d $(find jetauto_slam)/rviz/$(arg slam_methods).rviz"/>
+</launch>

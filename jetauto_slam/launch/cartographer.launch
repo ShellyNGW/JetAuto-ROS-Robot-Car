@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="sim"             default="false"/>
+    <param name="/use_sim_time" value="$(arg sim)"/>
+    <arg name="prefix"          default=""/>
+    <env name="prefix"          value="$(arg prefix)"/>
+
+    <node name="cartographer_node" pkg="cartographer_ros" type="cartographer_node" output="screen" args="-configuration_directory $(find jetauto_slam)/config -configuration_basename cartographer_params.lua" />
+    <node name="cartographer_occupancy_grid_node" pkg="cartographer_ros" type="cartographer_occupancy_grid_node" args="-resolution 0.025" />
+</launch>

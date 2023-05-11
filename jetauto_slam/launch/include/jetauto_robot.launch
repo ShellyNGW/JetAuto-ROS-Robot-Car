@@ -1,0 +1,135 @@
+<?xml version="1.0"?>
+<launch>
+    <!--机器命名空间(robot name space)-->
+    <arg name="master_name"  default="$(env MASTER)"/>
+    <arg name="robot_name"   default="$(env HOST)" />
+    <arg name="machine_type"    default="$(env MACHINE_TYPE)"/>
+
+    <!--是否使用仿真(whether to use simulation)-->
+    <arg name="sim"                 default="false" />
+
+    <arg name="use_joy"             default="true"/>
+
+    <!--是否使用深度相机模拟雷达(whether to use depth camera to simulate Lidar)-->
+    <arg name="use_depth_camera"    default="false" />
+
+    <!--手柄控制速度限制(speed limit of handle control)-->
+    <arg     if="$(arg sim)" name="max_linear"  default="0.7"/>
+    <arg unless="$(arg sim)" name="max_linear"  default="0.25"/>
+    <arg     if="$(arg sim)" name="max_angular" default="3.5"/>
+    <arg unless="$(arg sim)" name="max_angular" default="0.5"/>
+
+    <!--topic和frame设置(topic and frame settings)-->
+    <arg      if="$(eval robot_name == '/')"    name="topic_prefix" default=""/>
+    <arg unless="$(eval robot_name == '/')"     name="topic_prefix" default="/$(arg robot_name)"/>
+    <arg      if="$(eval robot_name == '/')"    name="frame_prefix" default=""/>
+    <arg unless="$(eval robot_name == '/')"     name="frame_prefix" default="$(arg robot_name)/"/>
+    <arg      if="$(eval robot_name == '/')"    name="tf_prefix"    default=""/>
+    <arg unless="$(eval robot_name == '/')"     name="tf_prefix"    default="$(arg robot_name)"/>
+
+    <arg name="cmd_vel_topic"       default="$(arg topic_prefix)/jetauto_controller/cmd_vel"/>
+    <arg name="scan_raw"            default="$(arg topic_prefix)/scan_raw"/>
+    <arg name="depth_camera_name"   default="camera"/>
+    <arg name="depth_camera_frame"  default="$(arg frame_prefix)$(arg depth_camera_name)_frame"/>
+    <arg name="scan_topic"          default="$(arg topic_prefix)/scan"/>
+    <arg name="odom_raw_topic"      default="$(arg topic_prefix)/odom_raw"/>
+    <arg name="odom_lidar_topic"    default="$(arg topic_prefix)/odom_lidar"/>
+    <arg name="odom_topic"          default="$(arg topic_prefix)/odom"/>
+    <arg name="imu_raw_topic"       default="$(arg topic_prefix)/imu_raw"/>
+    <arg name="imu_topic"           default="$(arg topic_prefix)/imu"/>
+
+    <arg     if="$(eval robot_name == master_name)" name="map_frame" default="$(arg frame_prefix)map"/>
+    <arg unless="$(eval robot_name == master_name)" name="map_frame" default="$(arg master_name)/map"/>
+    <arg name="odom_frame"          default="$(arg frame_prefix)odom"/>
+    <arg name="base_frame"          default="$(arg frame_prefix)base_footprint"/>
+    <arg name="lidar_frame"         default="$(arg frame_prefix)lidar_frame"/>
+    <arg name="imu_link"            default="$(arg frame_prefix)imu_link"/>
+
+    <group ns="$(arg robot_name)">
+        <!--机器人urdf模型加载(robot urdf model loading)-->
+        <param name="robot_description" command="$(find xacro)/xacro '$(find jetauto_description)/urdf/jetauto.urdf.xacro' odom_frame:=$(arg odom_frame) base_frame:=$(arg base_frame) depth_camera_name:=$(arg depth_camera_name) lidar_view:=false" />
+
+        <!--动态tf转换和发布(dynamic tf conversion and publishment)-->
+        <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" >
+            <param name="rate"  value="50"/>
+        </node>
+
+        <!--静态tf发布(static tf publishment)-->
+        <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" >
+            <param name="tf_prefix" value="$(arg tf_prefix)" />
+        </node>
+
+        <!--是否使用仿真(whether to use simulation)-->
+        <group unless="$(arg sim)">
+            <!--舵机控制(servo control)-->
+            <include file="$(find hiwonder_servo_controllers)/launch/start.launch">
+                <arg name="namespace"   value="$(arg topic_prefix)"/>
+                <arg name="base_frame"  value="$(arg base_frame)"/>
+            </include>
+
+            <!--深度相机开启(start depth camera)-->
+            <include file="$(find jetauto_peripherals)/launch/astrapro.launch">
+                <arg name="depth_camera_name"   value="$(arg depth_camera_name)" />
+                <arg name="tf_prefix"           value="$(arg tf_prefix)" />
+            </include>
+
+            <!--雷达开启(start Lidar)-->
+            <include unless="$(arg use_depth_camera)" file="$(find jetauto_peripherals)/launch/lidar.launch">
+                <arg name="scan_topic"  value="$(arg scan_raw)" />
+                <arg name="lidar_frame" value="$(arg lidar_frame)" />
+            </include>
+
+            <!--底盘驱动(chassis driver)-->
+            <include file="$(find jetauto_controller)/launch/jetauto_controller.launch" />
+
+            <!--odom发布(odom publishment)-->
+            <include file="$(find jetauto_controller)/launch/odom_publish.launch" >
+                <arg name="odom_topic"      value="$(arg odom_topic)" />
+                <arg name="odom_raw_topic"  value="$(arg odom_raw_topic)" />
+                <arg name="base_frame"      value="$(arg base_frame)" />
+                <arg name="odom_frame"      value="$(arg odom_frame)" />
+                <arg name="map_frame"       value="$(arg map_frame)"/>
+                <arg name="cmd_vel"         value="$(arg cmd_vel_topic)" />
+                <arg name="imu_raw_topic"   value="$(arg imu_raw_topic)" />
+                <arg name="imu_topic"       value="$(arg imu_topic)" />
+                <arg name="imu_link"        value="$(arg imu_link)" />
+            </include>
+        </group>
+
+        <group if="$(arg use_depth_camera)">
+            <!--深度相机模拟雷达-->
+            <include file="$(find jetauto_slam)/launch/include/depthimage_to_laserscan.launch">
+                <arg name="depth_topic"         value="$(arg topic_prefix)/$(arg depth_camera_name)/depth/image_raw" />
+                <arg name="camera_info_topic"   value="$(arg topic_prefix)/$(arg depth_camera_name)/depth/camera_info" />
+                <arg name="output_frame_id"     value="$(arg topic_prefix)/$(arg depth_camera_name)_link" />
+            </include>
+        </group>
+
+        <group unless="$(arg use_depth_camera)">
+            <!--雷达过滤(Lidar filter)-->
+            <node pkg="laser_filters" type="scan_to_scan_filter_chain" output="screen" name="laser_filter">
+                                <rosparam ns="scan_filter_chain" subst_value="true">
+                                  - name: box_filter
+                                    type: laser_filters/LaserScanBoxFilter
+                                    params:
+                                            box_frame: $(arg base_frame)
+                                            min_x: -0.2
+                                            max_x: 0.12
+                                            min_y: -0.15
+                                            max_y: 0.15
+                                            min_z: -0.2
+                                            max_z: 0.2
+                                </rosparam>
+                <remap from="scan" to="$(arg scan_raw)" />
+                <remap from="scan_filtered" to="$(arg scan_topic)" />
+            </node>
+        </group>
+
+        <!--手柄控制(handle control)-->
+        <include if="$(arg use_joy)" file="$(find jetauto_peripherals)/launch/joystick_control.launch" >
+            <arg name="max_linear"  value="$(arg max_linear)"/>
+            <arg name="max_angular" value="$(arg max_angular)"/>
+            <arg name="cmd_vel"     value="$(arg cmd_vel_topic)"/>
+        </include>
+    </group>
+</launch>

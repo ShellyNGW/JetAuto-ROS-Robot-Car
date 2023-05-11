@@ -1,0 +1,24 @@
+robot_radius: 0.05    # 机器人半径(robot radius)
+#footprint: [[-0.17, -0.14], [-0.17, 0.14], [0.17, 0.14], [0.17, -0.14]]
+
+obstacle_layer:
+  enabled: true
+  combination_method: 1 # 只能设置为0或1，用来更新地图上的代价值，一般设置为1(only can be set as 0 or 1)
+  track_unknown_space: true # 如果设置为false，那么地图上代价值就只分为致命碰撞和自由区域两种，如果设置为true，那么就分为致命碰撞，自由区域和未知区域三种(if it is set as false, there are only two types of cost on the map, including fatal collision and free zone. If it is set as true, three types of cost are available, including fatal collision, free zone and unknown area)
+  obstacle_range: 3.0   # 更新以机器人为中心，按此数值为半径内的障碍物信息(update the information of the obstacle locating within the area that takes robot as center and this value as radius)
+  raytrace_range: 3.5   # 更新以机器人为中心，按此数值为半径内的自由空间(update the free space that takes robot as center and this value as radius)
+  observation_sources: scan_filtered # 观察源，我们这里是激光数据(observation source. Lidar data is adopted)
+  scan_filtered: {
+    sensor_frame: base_footprint,  # 设置传感器参考坐标系名称(set the name of sensor reference coordinate system)
+    observation_persistence: 0.0,  # 传感器读数保存多久（单位秒）， 如果为0则保存最新的数据.(how long can the sensor reading be kept.(second)if it is set as 0, the latest data will be kept)
+    max_obstacle_height: 0.6, # 传感器读数的最大有效高度，以米为单位(maximum effective height of sensor reading(meter))
+    min_obstacle_height: 0.0, # 传感器最低有效读数，以米为单位(minimum effective height of sensor reading(meter))
+    data_type: LaserScan,  # 参数设置为LaserScan或PointCloud，这取决于主题使用的消息(parameter is set as LaserScan or PointCloud, which is determined by the message adopted by topic)
+    topic: /scan, # 应该设置为发布传感器数据的主题的名称(should be set as the name of topic publishing sensor data)
+    marking: true, # 传感器是否用于向代价地图添加障碍物信息(whether sensor is used to add obstacle information to cost map)
+    clearing: true # 传感器是否用于向代价地图清除障碍物信息(whether sensor is used to clear obstacle information on cost map)
+    }
+ 
+static_layer:
+  enabled: true
+  map_topic: "/map"

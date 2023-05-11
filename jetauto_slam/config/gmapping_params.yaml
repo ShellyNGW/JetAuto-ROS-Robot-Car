@@ -1,0 +1,32 @@
+map_update_interval: 0.1  # 地图更新速度s, 数值越低地图更新频率越快，但是需要更大的计算负载(map update speed s. The lower the value, the higher the frequency. But larger computational load is required.)
+maxUrange: 5.0            # 截取激光范围(intercept laser range)
+maxRange: 12.0            # 激光范围(laser range)
+sigma: 0.05
+kernelSize: 1
+lstep: 0.05
+astep: 0.05
+iterations: 1
+lsigma: 0.075
+ogain: 3.0
+lskip: 0                  # 为0,表示所有的激光都处理，尽可能为零，如果计算压力过大，可以改成1(set as 0 which means that all laser will be processed. If the computational pressure is overwhelming, you can change it as 1)
+minimumScore: 50          # 衡量扫描匹配效果的分数。当大场景中仪器的扫描范围小的时候（5m）可以避免位姿估计跳动太大。也叫最小匹配得分，(score that measure scan matching performance. Narrow scan range in large scene can protect pose estimation from changing rapidly. It is also called minimum matching score)
+                          # 它决定了你对激光的一个置信度，越高说明你对激光匹配算法的要求越高，激光的匹配也越容易失败而转去使用里程计数据，(It determines the confidence of laser. The higher the value, the stricter the requirements on laser matching algorithm. And laser matching is also more likely to fail and switch to odometer data)
+                          # 而设的太低又会使地图中出现大量噪声(Too low value also results in large amount of noise in the map)
+srr: 0.01
+srt: 0.02
+str: 0.01
+stt: 0.02
+linearUpdate: 0.01           # 机器人直线运行这么远的时候进行一次扫描，单位是米(start first scanning, when robot move beyond this distance in meters )
+angularUpdate: 0.0436        # 器人旋转这么多的时候扫描一次，单位时弧度(scan once, when robot rotate beyond this angle in radian)
+temporalUpdate: -1.0
+resampleThreshold: 0.5
+particles: 100            # 很重要，粒子个数(it is very important. Particle amount)
+xmin: -5.0
+ymin: -5.0
+xmax: 5.0
+ymax: 5.0
+delta: 0.025              # 地图分辨率(map resolution)
+llsamplerange: 0.01
+llsamplestep: 0.01
+lasamplerange: 0.005
+lasamplestep: 0.005

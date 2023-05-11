@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+    <!--要加载的地图-->
+    <arg name="robot_name"  default="$(env HOST)" />
+    <arg name="map"         default="test0.025"/>
+    <arg name="map_file"    default="$(find jetauto_slam)/maps/$(arg map).yaml"/>
+
+    <!-- 启动Map server功能包，发布地图 -->
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" ns="$(arg robot_name)" >
+        <param     if="$(eval robot_name == '/')" name="frame_id" value="map" />
+        <param unless="$(eval robot_name == '/')" name="frame_id" value="$(arg robot_name)/map" />
+    </node>
+</launch>

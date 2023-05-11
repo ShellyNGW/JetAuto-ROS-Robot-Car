@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="master_name"  default="$(env MASTER)"/>
+    <arg name="robot_name"   default="$(env HOST)" />
+
+    <!--topic和frame设置-->
+    <arg      if="$(eval robot_name == '/')"    name="topic_prefix" default=""/>
+    <arg unless="$(eval robot_name == '/')"     name="topic_prefix" default="/$(arg robot_name)"/>
+    <arg      if="$(eval robot_name == '/')"    name="frame_prefix" default=""/>
+    <arg unless="$(eval robot_name == '/')"     name="frame_prefix" default="$(arg robot_name)/"/>
+    <arg      if="$(eval robot_name == '/')"    name="tf_prefix"    default=""/>
+    <arg unless="$(eval robot_name == '/')"     name="tf_prefix"    default="$(arg robot_name)"/>
+
+    <arg name="cmd_vel_topic"       default="$(arg topic_prefix)/jetauto_controller/cmd_vel"/>
+    <arg name="scan_topic"          default="$(arg topic_prefix)/scan"/>
+    <arg     if="$(eval robot_name == master_name)" name="map_topic" default="$(arg topic_prefix)/map"/>
+    <arg unless="$(eval robot_name == master_name)" name="map_topic" default="/$(arg master_name)/map"/>
+    <arg name="odom_topic"          default="$(arg topic_prefix)/odom"/>
+
+    <arg     if="$(eval robot_name == master_name)" name="map_frame" default="$(arg frame_prefix)map"/>
+    <arg unless="$(eval robot_name == master_name)" name="map_frame" default="$(arg master_name)/map"/>
+    <arg name="odom_frame"          default="$(arg frame_prefix)odom"/>
+    <arg name="base_frame"          default="$(arg frame_prefix)base_footprint"/>
+    <arg name="use_dwa"             default="false"/>
+    <arg name="clicked_point"       default="$(arg topic_prefix)/clicked_point"/>
+    <arg name="move_base_result"    default="$(arg topic_prefix)/move_base/result"/>
+    <arg name="depth_camera_name"   default="camera"/>
+    <arg name="rtabmap_map_path"    default="~/.ros/rtabmap.db"/>
+
+    <group ns="$(arg robot_name)">
+        <!-- 启动路径规划算法包 -->
+        <include file="$(find jetauto_navigation)/launch/include/move_base.launch">
+            <arg name="cmd_vel_topic"                   value="$(arg cmd_vel_topic)" />
+
+            <arg name="global_costmap_map_topic"        value="$(arg map_topic)"/>
+            <arg name="global_costmap_sensor_frame"     value="$(arg base_frame)"/>
+            <arg name="global_costmap_sensor_topic"     value="$(arg scan_topic)"/>
+            <arg name="global_costmap_global_frame"     value="$(arg map_frame)"/>
+            <arg name="global_costmap_robot_base_frame" value="$(arg base_frame)"/>
+            <arg name="local_costmap_map_topic"         value="$(arg map_topic)"/>
+            <arg name="local_costmap_sensor_frame"      value="$(arg base_frame)"/>
+            <arg name="local_costmap_sensor_topic"      value="$(arg scan_topic)"/>
+            <arg name="local_costmap_global_frame"      value="$(arg odom_frame)"/>
+            <arg name="local_costmap_robot_base_frame"  value="$(arg base_frame)"/>
+            <arg name="virtual_wall_map_frame"          value="$(arg map_frame)"/>
+            <arg name="teb_odom_topic"                  value="$(arg odom_topic)"/>
+            <arg name="teb_map_frame"                   value="$(arg odom_frame)"/>
+        </include>
+
+        <!--rtabmap导航-->
+        <include file="$(find jetauto_slam)/launch/rtabmap.launch" >
+            <arg name="localization"        value="true"/>
+            <arg name="database_path"       value="$(arg rtabmap_map_path)"/>
+            <arg name="subscribe_scan"      value="true"/>
+            <arg name="rgb_topic"           value="$(arg topic_prefix)/$(arg depth_camera_name)/rgb/image_raw" />
+            <arg name="depth_topic"         value="$(arg topic_prefix)/$(arg depth_camera_name)/depth/image_raw" />
+            <arg name="camera_info_topic"   value="$(arg topic_prefix)/$(arg depth_camera_name)/rgb/camera_info" />
+            <arg name="scan_topic"          value="$(arg scan_topic)"/>
+            <arg name="map_topic"           value="$(arg map_topic)"/>
+            <arg name="map_frame"           value="$(arg map_frame)"/>
+            <arg name="odom_frame"          value="$(arg odom_frame)"/>
+            <arg name="base_frame"          value="$(arg base_frame)"/>
+            <arg name="move_base"           value="$(arg topic_prefix)/move_base"/>
+        </include>
+
+        <!--多点导航-->
+        <node pkg="jetauto_navigation" type="publish_point.py" name="publish_point" output="screen">
+            <param name="map_frame"         value="$(arg map_frame)"/>
+            <param name="clicked_point"     value="$(arg clicked_point)"/>
+            <param name="move_base_result"  value="$(arg move_base_result)"/>
+        </node>
+    </group>
+</launch>

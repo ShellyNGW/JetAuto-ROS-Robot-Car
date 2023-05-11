@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="global_frame"        default="map"/>
+    <arg name="robot_base_frame"    default="base_footprint"/>
+    <arg name="odom_frame"          default="odom"/>
+    <arg name="map_topic"           default="map"/>
+    <arg name="map_frame"           default="map"/>
+    <arg name="odom_topic"          default="odom"/>
+    <arg name="scan_topic"          default="scan"/>
+    <arg name="clicked_point"       default="clicked_point"/>
+    <arg name="move_base_result"    default="move_base_result"/>
+    <arg name="cmd_vel_topic"       default="jetauto_controller/cmd_vel"/>
+
+    <!-- 启动路径规划算法包(start path planning algorithm package) -->
+    <include file="$(find jetauto_navigation)/launch/include/move_base.launch">
+        <arg name="cmd_vel_topic"                   value="$(arg cmd_vel_topic)" />
+        <arg name="global_costmap_map_topic"        value="$(arg map_topic)"/>
+        <arg name="global_costmap_sensor_frame"     value="$(arg robot_base_frame)"/>
+        <arg name="global_costmap_sensor_topic"     value="$(arg scan_topic)"/>
+        <arg name="global_costmap_global_frame"     value="$(arg global_frame)"/>
+        <arg name="global_costmap_robot_base_frame" value="$(arg robot_base_frame)"/>
+        <arg name="local_costmap_map_topic"         value="$(arg map_topic)"/>
+        <arg name="local_costmap_sensor_frame"      value="$(arg robot_base_frame)"/>
+        <arg name="local_costmap_sensor_topic"      value="$(arg scan_topic)"/>
+        <arg name="local_costmap_global_frame"      value="$(arg odom_frame)"/>
+        <arg name="local_costmap_robot_base_frame"  value="$(arg robot_base_frame)"/>
+        <arg name="virtual_wall_map_frame"          value="$(arg map_frame)"/>
+        <arg name="teb_odom_topic"                  value="$(arg odom_topic)"/>
+        <arg name="teb_map_frame"                   value="$(arg odom_frame)"/>
+    </include>
+
+    <!-- 启动自探索建图算法包(start autonomous exploring mapping algorithm package) -->
+    <arg name="plugin"                  default="exploration_server::ExamplePlugin"/>
+    <param name="plugin_name"           value="$(arg plugin)"/>
+    <arg name="blacklist_box_size"      default="0.5"/>
+    <param name="blacklist_box_size"    value="$(arg blacklist_box_size)"/>
+
+    <!-- Set to your sensor's range -->
+    <arg name="sensor_range" default="1.0"/>
+
+    <node pkg="exploration_server" type="plugin_client" name="plugin_client" output="screen"/>
+    <node pkg="exploration_server" type="exploration_server_node" name="exploration_server_node" output="screen">
+        <rosparam param="points" ns="explore_costmap" file="$(find jetauto_slam)/config/frontier_points.yaml" command="load"/>
+        <rosparam ns="explore_costmap" subst_value="true">
+                    robot_radius: 0.3
+                    transform_tolerance: 1
+                    update_frequency: 5.0
+                    publish_frequency: 5.0
+                    global_frame: $(arg global_frame) 
+                    robot_base_frame: $(arg robot_base_frame)
+                    resolution: 0.025
+                    rolling_window: false
+                    track_unknown_space: true
+                    plugins:
+                      - {name: static,           type: "costmap_2d::StaticLayer"}
+                      - {name: polygon_layer,    type: "polygon_layer::PolygonLayer"}
+                      - {name: sensor,           type: "costmap_2d::ObstacleLayer"}
+                      - {name: inflation,        type: "costmap_2d::InflationLayer"}
+                    static:
+                      map_topic: $(arg map_topic)
+                      subscribe_to_updates: true
+                    polygon_layer:
+                      resize_to_polygon: true
+                    sensor:
+                      observation_sources: laser
+                      laser: {data_type: LaserScan, clearing: true, marking: true, topic: $(arg scan_topic), inf_is_valid: true, raytrace_range: $(arg sensor_range), obstacle_range: $(arg sensor_range)}
+                    inflation:
+                      inflation_radius: 0.3
+                </rosparam>
+        <param name="frequency" type="double" value="5.0"/>
+        <param name="goal_aliasing" type="double" value="$(arg sensor_range)"/>
+    </node>
+
+    <!--多点导航(multi-point navigation)-->
+    <node pkg="jetauto_navigation" type="publish_point.py" name="publish_point" output="screen">
+        <param name="map_frame"         value="$(arg map_frame)"/>
+        <param name="clicked_point"     value="$(arg clicked_point)"/>
+        <param name="move_base_result"  value="$(arg move_base_result)"/>
+    </node>
+</launch>

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="map_frame" default="map"/>
+    <arg name="odom_frame" default="odom"/>
+    <arg name="base_frame" default="base_footprint"/>
+    <node pkg="slam_karto" type="slam_karto" name="slam_karto" output="screen">
+        <param name="map_frame"             value="$(arg map_frame)"/>
+        <param name="odom_frame"            value="$(arg odom_frame)"/>
+        <param name="base_frame"            value="$(arg base_frame)"/>
+        <param name="map_update_interval"   value="5"/>
+        <param name="resolution"            value="0.025"/>
+    </node>
+</launch>
